@@ -14,8 +14,8 @@ services:
     plan: free
     region: oregon
     rootDir: Resume_backend
-    dockerfilePath: ./Resume_backend/Dockerfile
-    dockerContext: ./Resume_backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/health
     envVars:
       - key: PORT
@@ -44,7 +44,7 @@ services:
     runtime: static
     rootDir: resume_frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: ./resume_frontend/dist
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*
