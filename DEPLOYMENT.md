@@ -33,9 +33,6 @@ Render will prompt for these because they are marked `sync: false`:
 
 - `FRONTEND_URL`
 - `GROQ_API_KEY`
-- `FEEDBACK_RECIPIENT_EMAIL`
-- `MAIL_USERNAME`
-- `MAIL_PASSWORD`
 - `SERPAPI_API_KEY`
 
 ### `resume-frontend`
@@ -80,17 +77,11 @@ Expected response:
 {"status":"ok"}
 ```
 
-## 7. Important Free Plan Limitation
+## 7. Feedback Endpoint
 
-Render free web services cannot send outbound traffic on SMTP ports `25`, `465`, or `587`.
+Email-based feedback has been removed from the deployment requirements.
 
-That means the feedback email feature will likely not work on the free backend if it depends on Gmail SMTP.
-
-Your options are:
-
-- ignore feedback email for now
-- switch feedback sending to an HTTP email API later
-- move the backend to a paid Render instance later
+The backend endpoint `/api/feedback` now returns a disabled response instead of trying to send email.
 
 ## 8. Security Note
 

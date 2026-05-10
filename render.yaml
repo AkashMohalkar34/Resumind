@@ -36,20 +36,6 @@ services:
           property: password
       - key: GROQ_API_KEY
         sync: false
-      - key: FEEDBACK_RECIPIENT_EMAIL
-        sync: false
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: 587
-      - key: MAIL_USERNAME
-        sync: false
-      - key: MAIL_PASSWORD
-        sync: false
-      - key: MAIL_SMTP_AUTH
-        value: true
-      - key: MAIL_SMTP_STARTTLS_ENABLE
-        value: true
       - key: SERPAPI_API_KEY
         sync: false
 

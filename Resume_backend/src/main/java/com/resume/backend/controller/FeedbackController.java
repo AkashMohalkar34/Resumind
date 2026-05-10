@@ -1,8 +1,8 @@
 package com.resume.backend.controller;
 
 import com.resume.backend.feedback.FeedbackRequest;
-import com.resume.backend.feedback.FeedbackService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,15 +15,9 @@ import java.util.Map;
 @RequestMapping("/api/feedback")
 public class FeedbackController {
 
-    private final FeedbackService feedbackService;
-
-    public FeedbackController(FeedbackService feedbackService) {
-        this.feedbackService = feedbackService;
-    }
-
     @PostMapping
     public ResponseEntity<Map<String, String>> sendFeedback(@Valid @RequestBody FeedbackRequest request) {
-        feedbackService.sendFeedback(request);
-        return ResponseEntity.ok(Map.of("message", "Feedback sent successfully."));
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(Map.of("message", "Feedback email is disabled for this deployment."));
     }
 }
