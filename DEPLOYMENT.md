@@ -1,51 +1,35 @@
 # Deployment Guide
 
-This repo is now prepared for deployment on `Render`.
+This repo is now prepared for a free-friendly Render setup:
 
-It includes:
+- `resume-db`: free Render Postgres
+- `resume-backend`: free Render web service
+- `resume-frontend`: free Render static site
 
-- A Render Blueprint: [render.yaml](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/render.yaml:1)
-- A backend Dockerfile: [Resume_backend/Dockerfile](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/Resume_backend/Dockerfile:1)
-- A MySQL Dockerfile for Render: [render/mysql/Dockerfile](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/render/mysql/Dockerfile:1)
+Main files:
+
+- Blueprint: [render.yaml](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/render.yaml:1)
+- Backend config: [application.properties](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/Resume_backend/src/main/resources/application.properties:1)
 - Backend env template: [Resume_backend/.env.example](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/Resume_backend/.env.example:1)
-- Frontend env template: [resume_frontend/.env.example](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/resume_frontend/.env.example:1)
 
-## What The Blueprint Creates
+## 1. Create The Blueprint
 
-When you deploy the Blueprint, Render will create:
+1. Push the repo to GitHub.
+2. In Render, click `New` -> `Blueprint`.
+3. Select this repo.
+4. Render should detect [render.yaml](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/render.yaml:1).
 
-- `resume-db`: a private MySQL service with a persistent disk
-- `resume-backend`: a public Spring Boot web service
-- `resume-frontend`: a public static site for the React app
+## 2. What Render Will Create
 
-## 1. Push The Repo
+- `resume-db` as a free Postgres database
+- `resume-backend` as a free Docker web service
+- `resume-frontend` as a free static site
 
-Push this repo to GitHub before importing it into Render.
+## 3. Values You Must Enter
 
-## 2. Create Services From Blueprint
+Render will prompt for these because they are marked `sync: false`:
 
-In Render:
-
-1. Click `New`.
-2. Choose `Blueprint`.
-3. Select this repository.
-4. Render will detect [render.yaml](/C:/Users/Akash Mohalkar/Videos/Ai_Generated_Resume-main/render.yaml:1).
-5. Review the three services and continue.
-
-## 3. Fill Required Secret Values
-
-The Blueprint intentionally leaves secret values unset with `sync: false`, so Render will prompt you for them in the dashboard.
-
-### For `resume-db`
-
-Set:
-
-- `MYSQL_PASSWORD`
-- `MYSQL_ROOT_PASSWORD`
-
-### For `resume-backend`
-
-Set:
+### `resume-backend`
 
 - `FRONTEND_URL`
 - `GROQ_API_KEY`
@@ -54,59 +38,60 @@ Set:
 - `MAIL_PASSWORD`
 - `SERPAPI_API_KEY`
 
-### For `resume-frontend`
-
-Set:
+### `resume-frontend`
 
 - `VITE_API_URL`
 
 ## 4. Deployment Order
 
-Use this order to avoid CORS and broken API URLs:
+1. Create the Blueprint.
+2. Wait for `resume-backend` to get a public URL.
+3. Set `resume-frontend` -> `VITE_API_URL` to that backend URL.
+4. Wait for `resume-frontend` to get a public URL.
+5. Set `resume-backend` -> `FRONTEND_URL` to that frontend URL.
+6. Redeploy the affected service if Render does not redeploy automatically.
 
-1. Deploy the Blueprint once.
-2. Wait for Render to create the backend public URL.
-3. Set `VITE_API_URL` on `resume-frontend` to the backend URL.
-4. Wait for Render to create the frontend public URL.
-5. Set `FRONTEND_URL` on `resume-backend` to the frontend URL.
-6. Redeploy the frontend and backend if needed.
+## 5. Backend Database Wiring
 
-## 5. Exact Values To Use
+The backend now reads these environment variables:
 
-### `resume-frontend`
+- `DATABASE_URL`
+- `DATABASE_USER`
+- `DATABASE_PASSWORD`
 
-For `VITE_API_URL`, use your backend Render URL, for example:
+Render injects them automatically from the `resume-db` Postgres instance through the Blueprint.
+
+The app also automatically converts Render's private connection string format:
+
+- Input from Render: `postgresql://user:password@host:port/database`
+- Runtime JDBC URL used by Spring: `jdbc:postgresql://user:password@host:port/database`
+
+## 6. Health Check
+
+After deploy, verify the backend at:
 
 ```txt
-https://resume-backend.onrender.com
+https://your-backend-name.onrender.com/api/health
 ```
 
-### `resume-backend`
+Expected response:
 
-For `FRONTEND_URL`, use your frontend Render URL, for example:
-
-```txt
-https://resume-frontend.onrender.com
+```json
+{"status":"ok"}
 ```
 
-The backend already gets these database values from the Blueprint:
+## 7. Important Free Plan Limitation
 
-- `MYSQL_URL=jdbc:mysql://resume-db:3306/resume_app?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC`
-- `MYSQL_USERNAME` from the `resume-db` service
-- `MYSQL_PASSWORD` from the `resume-db` service
+Render free web services cannot send outbound traffic on SMTP ports `25`, `465`, or `587`.
 
-## 6. Important Notes
+That means the feedback email feature will likely not work on the free backend if it depends on Gmail SMTP.
 
-- The frontend is configured as a static site with a rewrite rule for React Router.
-- The backend uses `/api/health` as its health check path.
-- The MySQL service is private and reachable only by other Render services.
-- Render’s current docs indicate that Java apps are typically deployed via Docker, which is why the backend uses a Docker-based web service.
-- Render’s MySQL guidance uses a private service plus a persistent disk mounted at `/var/lib/mysql`, and this repo is configured the same way.
+Your options are:
 
-## 7. Gmail Setup
+- ignore feedback email for now
+- switch feedback sending to an HTTP email API later
+- move the backend to a paid Render instance later
 
-If you use Gmail for feedback emails, `MAIL_PASSWORD` should be a Gmail App Password, not your normal Gmail login password.
+## 8. Security Note
 
-## 8. Security Step
-
-Because this project previously contained real-looking secrets in source config, rotate any credentials or API keys that were ever committed before you go live.
+This repo previously contained real-looking secrets in source config. Those defaults have been removed, but you should still rotate any credentials or API keys that were ever committed before deploying.
