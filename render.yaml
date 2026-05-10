@@ -42,7 +42,6 @@ services:
   - type: web
     name: resume-frontend
     runtime: static
-    plan: free
     rootDir: resume_frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./resume_frontend/dist
