@@ -52,11 +52,12 @@ public class DataSourceConfig {
         if (url.startsWith("jdbc:")) {
             return url;
         }
+        URI uri = toUri(url);
         if (url.startsWith("postgres://")) {
-            return "jdbc:" + url.replaceFirst("^postgres://", "postgresql://");
+            return buildPostgresJdbcUrl(uri);
         }
         if (url.startsWith("postgresql://")) {
-            return "jdbc:" + url;
+            return buildPostgresJdbcUrl(uri);
         }
         return url;
     }
@@ -95,6 +96,27 @@ public class DataSourceConfig {
         } catch (IllegalArgumentException ignored) {
             return null;
         }
+    }
+
+    private String buildPostgresJdbcUrl(URI uri) {
+        if (uri == null || uri.getHost() == null || uri.getPath() == null || uri.getPath().isBlank()) {
+            return "jdbc:postgresql://localhost:5432/resume_app";
+        }
+
+        StringBuilder jdbcUrl = new StringBuilder("jdbc:postgresql://")
+                .append(uri.getHost());
+
+        if (uri.getPort() > 0) {
+            jdbcUrl.append(":").append(uri.getPort());
+        }
+
+        jdbcUrl.append(uri.getPath());
+
+        if (uri.getQuery() != null && !uri.getQuery().isBlank()) {
+            jdbcUrl.append("?").append(uri.getQuery());
+        }
+
+        return jdbcUrl.toString();
     }
 
     private String firstNonBlank(String... values) {
