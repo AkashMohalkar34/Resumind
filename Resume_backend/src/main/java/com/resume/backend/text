@@ -1,0 +1,97 @@
+package com.resume.backend.Service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONObject;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class ResumeServiceImpl implements ResumeService{
+
+
+    public ChatClient chatClient ;
+
+    public ResumeServiceImpl(ChatClient.Builder builder){
+        this.chatClient = builder.build();
+    }
+    @Override
+    public Map<String, Object> generateResumeResponse(String userResumeDescription) throws IOException {
+
+
+      String promptString =   this.loadPromtFromfile("resume_prompt.txt");
+      String promptContent =  this.putValueToTemplates(promptString , Map.of(
+                           "userDescription" , userResumeDescription
+                   ));
+
+        Prompt prompt = new Prompt(promptContent);
+
+        if (chatClient == null) {
+            System.out.println("Chatclient is nullllllllllllllll");
+            throw new IllegalStateException("ChatClient is not initialized properly.");
+        }
+
+        String response =  chatClient.prompt(prompt).call().content();
+
+        System.out.println(response);
+         Map<String ,Object> stringObjectMap =  parseMultipleResponses(response);
+
+
+        return stringObjectMap;
+    }
+
+    String loadPromtFromfile(String filename) throws IOException {
+//        Path path = Path.of(new ClassPathResource(filename).getPath());
+
+        Path path = new ClassPathResource(filename).getFile().toPath();
+        return Files.readString(path);
+    }
+
+    String putValueToTemplates(String template , Map<String ,String> values){
+        for(Map.Entry<String,String> entry : values.entrySet()){
+           template =  template.replace("{" + entry.getKey()  + "}" , entry.getValue());
+        }
+          return template;
+    }
+
+
+    public Map<String, Object> parseMultipleResponses(String response) throws JsonProcessingException {
+
+                 Map<String , Object> jsonResponse = new HashMap<>();
+
+        int jsonStart = response.indexOf("```json") + 7;
+        int jsonEnd = response.lastIndexOf("```");
+
+        if(jsonEnd != -1 && jsonStart < jsonEnd){
+           String jsonContent =   response.substring(jsonStart , jsonEnd).trim();
+            jsonContent =   response.trim();
+
+           try{
+
+               ObjectMapper objectMapper = new ObjectMapper();
+
+              Map<String ,Object> datacontent = objectMapper.readValue(jsonContent ,Map.class);
+               jsonResponse.put("data" , datacontent);
+           }catch (Exception e){
+               System.out.println("Data is null");
+               jsonResponse.put("data" , null);
+               System.err.println("Invalid json Formate in Response : " + e.getMessage());
+           }
+
+
+
+//        }else{
+//            jsonResponse.put("data" , null);
+//        }
+        return jsonResponse;
+    }
+
+}

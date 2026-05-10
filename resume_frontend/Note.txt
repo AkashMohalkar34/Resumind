@@ -1,0 +1,30 @@
+
+"I am a Java Developer with 5 year of experience in building scalable backend applications using spring boot and microservices.
+ I have expertise in MySQL , PostgreSQL , and MongoDB .I am proficient in AWS and Docker for cloud deployments.
+ I have worked at ABC Tech as software Engineer and at XYZ solutions as a Senior Software Developer .
+ I hold a Bachelor's degree in Computer Science . I have built an Expense Management System using Spring boot and React.js .
+  I  am AWS certified Solutions Architect and Passionate about open-source contributions."
+
+///////////////////  Second Promt  //////////////////////////
+My name is Rahul Sharma. My email is rahul.sharma.dev@gmail.com, phone number is +91-9876543210, and I live in Pune, Maharashtra, India. My LinkedIn is https://www.linkedin.com/in/rahulsharma-dev, my GitHub is https://github.com/rahulsharma-dev, and my portfolio is https://rahulsharma.dev. I am a Java Full Stack Developer with 2.5 years of experience. I have worked with Java, Spring Boot, MySQL, Hibernate, REST APIs, React.js, JavaScript, HTML, CSS, and Git. My skill levels are: Java - Advanced, Spring Boot - Advanced, MySQL - Intermediate, React.js - Intermediate, REST API Development - Advanced, Hibernate/JPA - Intermediate, Git/GitHub - Advanced, HTML/CSS/JavaScript - Intermediate. I am looking for Software Engineer and Java Developer roles. I worked as a Software Engineer at TechNova Solutions in Pune from Jan 2023 to Present, where I developed REST APIs, improved API response time by 35%, integrated AI APIs, optimized SQL queries, fixed production bugs, and collaborated with frontend developers. Before that, I was an Intern Developer at CodeCraft Labs in Pune from Jul 2022 to Dec 2022, where I built responsive UI pages, connected frontend with backend services, tested APIs with Postman, and improved form validation. I completed a B.E. in Computer Engineering from Savitribai Phule Pune University in 2022. My certifications are Java Programming Masterclass from Udemy in 2023 and Spring Boot Microservices from Coursera in 2024. My projects include AI Resume Generator built with React, Spring Boot, MySQL, and Groq API with GitHub link https://github.com/rahulsharma-dev/ai-resume-generator, and Job Portal Web App built with Spring Boot, React, MySQL, and JWT with GitHub link https://github.com/rahulsharma-dev/job-portal-app. My achievements include improving backend performance by 35% in 2024 and becoming a finalist in a college hackathon in 2022. I speak English, Hindi, and Marathi. My interests are backend architecture, open-source contribution, problem solving, cloud deployment, and system design."
+
+
+: For the Daisy Ui
+  
+  1. npm i -D daisyui@latest
+
+  2. open tailwind.confing.css ---> plugins: [require('daisyui')],
+
+  ::::::::::React router Dom
+
+   npm install react-router-dom
+
+    npm install react-hot-toast
+
+    npm install axios
+
+
+    //////////////////////////////////////////////////
+    Steps After the Resume Generated
+    1. to Create the showForm field 
+    2. within the form create the useState

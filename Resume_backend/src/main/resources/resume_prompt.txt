@@ -1,0 +1,69 @@
+
+Generate a professional ATS-friendly IT job resume in JSON format based on the following description. Ensure the JSON is consistent, factual, well-structured, and contains all specified keys, even if some values are empty or null. Use the exact keys provided below and maintain their hierarchy.
+
+Input Description:
+"{{userDescription}}"
+
+ATS Requirements:
+- Use clear, standard section wording that applicant tracking systems can parse easily.
+- Do not add tables, columns, icons, emojis, rating bars, decorative symbols, or unusual headings.
+- Keep language concise, professional, and keyword rich for the candidate's target role.
+- Every experience responsibility should be a short achievement-focused bullet with strong action verbs.
+- Include measurable impact whenever the description provides enough information.
+- Keep the content realistic and do not invent certifications, links, companies, dates, or achievements.
+- Keep the resume concise enough to fit on a single A4 page when rendered.
+
+JSON Structure Requirements:
+personalInformation: Include the following keys:
+fullName (string)
+email (string)
+phoneNumber (string)
+location (string)
+linkedIn (string )
+gitHub (string or null if not provided)
+portfolio (string or null if not provided)
+skills: List of object that contain two keys 'title' and 'level' (minimum 5 skills). Prefer exact recruiter keywords like Java, Spring Boot, REST APIs, MySQL, React.js, Docker, AWS.
+
+summary: A brief ATS-friendly overview of skills, experience, domain strengths, and career goals (string, 2 to 4 sentences).
+
+experience: A list of job roles. Each job role should include:
+jobTitle (string)
+company (string)
+location (string)
+duration (string, e.g., "Jan 2020 - Present")
+responsibility(array of strings with 3 to 5 bullet-style points)
+
+education: A list of degrees. Each degree should include:
+degree (string)
+university (string)
+location (string)
+graduationYear (string)
+
+certifications: A list of certifications. Each certification should include:
+title (string)
+issuingOrganization (string)
+year (string)
+
+projects: A list of key projects. Each project should include(only 2 Projects):
+title (string)
+description (string)
+technologiesUsed (array of strings)
+githubLink (string or null if not provided)
+
+achievements: A list achievements that contains objects of keys
+title (string)
+year(string)
+extraInformation(string)
+
+languages: A list of spoken languages objects contain keys
+id(number)
+name(string)
+
+interests: A list of additional interests or hobbies related to technology or professional development  [list of objects having keys].
+id(number)
+name(string)
+
+Output Rules:
+- Return valid JSON only.
+- Do not wrap the JSON in markdown.
+- Prefer standard labels and ATS-friendly phrasing over creative wording.
