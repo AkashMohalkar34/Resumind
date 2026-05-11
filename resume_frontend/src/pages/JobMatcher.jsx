@@ -463,7 +463,6 @@ const JobMatcher = () => {
                     const applyUrl = getApplyUrl(job);
                     const company = job.company || "Not specified";
                     const location = job.location || "Not specified";
-                    const vacancies = job.vacancies || "Not specified";
 
                     return (
                       <>
@@ -475,6 +474,12 @@ const JobMatcher = () => {
                       <h3 className="text-base font-semibold leading-6 text-slate-50">
                         {job.title}
                       </h3>
+                      <p className="text-lg font-medium leading-6 text-slate-200">
+                        {company}
+                      </p>
+                      <p className="text-sm leading-5 text-slate-400">
+                        {location}
+                      </p>
                     </div>
                     <div className="flex flex-wrap justify-end gap-2">
                       {job.platform_links?.map((platform) => (
@@ -490,10 +495,6 @@ const JobMatcher = () => {
                       ))}
                     </div>
                   </div>
-
-                  <p className="mt-2 text-xs text-slate-300">Company: {company}</p>
-                  <p className="mt-1 text-xs text-slate-300">Location: {location}</p>
-                  <p className="mt-1 text-xs text-slate-300">Vacancies: {vacancies}</p>
 
                   {job.matchedKeywords?.length ? (
                     <div className="mt-4 flex flex-wrap gap-2">

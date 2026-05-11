@@ -87,17 +87,18 @@ public class LiveJobSearchService {
                     }
 
                     String snippet = stringValue(item.get("snippet"));
+                    if (isExpiredOrClosedListing(title, snippet, link)) {
+                        continue;
+                    }
                     String platform = detectPlatform(link);
                     String company = resolveCompany(item, title, snippet, platform);
                     String location = resolveLocation(item, snippet, request.location());
-                    String vacancies = resolveVacancies(item, title, snippet);
                     List<String> matchedKeywords = findMatchedKeywords(title + " " + snippet, request.skills());
 
                     Map<String, Object> job = new LinkedHashMap<>();
                     job.put("title", title);
                     job.put("company", company);
                     job.put("location", location);
-                    job.put("vacancies", vacancies);
                     job.put("description", snippet);
                     job.put("matchedKeywords", matchedKeywords);
                     job.put("match_score", calculateScore(matchedKeywords, jobs.size()));
@@ -234,6 +235,11 @@ public class LiveJobSearchService {
             return snippetCompany;
         }
 
+        String titleCompany = extractCompanyFromTitle(title);
+        if (!titleCompany.isBlank()) {
+            return titleCompany;
+        }
+
         String source = stringValue(item.get("source"));
         if (!source.isBlank() && !looksLikePlatformName(source)) {
             return source;
@@ -267,33 +273,6 @@ public class LiveJobSearchService {
         String normalizedSnippet = stringValue(snippet);
         if (normalizedSnippet.toLowerCase(Locale.ROOT).contains("remote")) {
             return "Remote";
-        }
-
-        return "Not specified";
-    }
-
-    private String resolveVacancies(Map<String, Object> item, String title, String snippet) {
-        String richSnippetVacancies = extractRichSnippetValue(item, "vacancies");
-        if (!richSnippetVacancies.isBlank()) {
-            return richSnippetVacancies;
-        }
-
-        String text = stringValue(title) + ". " + stringValue(snippet);
-        String lower = text.toLowerCase(Locale.ROOT);
-
-        java.util.regex.Matcher countMatcher = java.util.regex.Pattern
-                .compile("\\b(\\d+)\\+?\\s+(openings?|vacancies?|positions?|roles?)\\b", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(text);
-        if (countMatcher.find()) {
-            return countMatcher.group(1) + " openings";
-        }
-
-        if (lower.contains("multiple openings") || lower.contains("multiple positions") || lower.contains("multiple vacancies")) {
-            return "Multiple openings";
-        }
-
-        if (lower.contains("urgent hiring") || lower.contains("hiring now")) {
-            return "Hiring now";
         }
 
         return "Not specified";
@@ -346,8 +325,25 @@ public class LiveJobSearchService {
         return "";
     }
 
+    private String extractCompanyFromTitle(String title) {
+        String normalized = stringValue(title);
+        if (normalized.isBlank() || !normalized.contains(" - ")) {
+            return "";
+        }
+
+        String[] segments = normalized.split("\\s-\\s");
+        for (int i = 1; i < segments.length; i++) {
+            String candidate = cleanCompanyCandidate(segments[i]);
+            if (looksLikeCompanyName(candidate) && !looksLikeLocation(candidate)) {
+                return candidate;
+            }
+        }
+
+        return "";
+    }
+
     private boolean looksLikeCompanyName(String value) {
-        String candidate = stringValue(value);
+        String candidate = cleanCompanyCandidate(value);
         if (candidate.isBlank()) {
             return false;
         }
@@ -361,10 +357,6 @@ public class LiveJobSearchService {
         }
         if (lower.contains("developer") || lower.contains("engineer") || lower.contains("analyst")) {
             return false;
-        }
-        if (lower.contains("remote")) {
-            candidate = candidate.replaceAll("(?i)\\bremote\\b", "").replaceAll("\\s+", " ").trim();
-            lower = candidate.toLowerCase(Locale.ROOT);
         }
         if (candidate.isBlank()) {
             return false;
@@ -381,7 +373,56 @@ public class LiveJobSearchService {
                 || lower.contains("analytics")
                 || lower.contains("digital")
                 || lower.contains("services")
+                || lower.contains("consultancy")
+                || lower.contains("company")
                 || candidate.split("\\s+").length <= 5;
+    }
+
+    private String cleanCompanyCandidate(String value) {
+        String candidate = stringValue(value);
+        candidate = candidate.replaceAll("(?i)\\bremote\\b", " ");
+        candidate = candidate.replaceAll("(?i)\\beasily apply\\b", " ");
+        candidate = candidate.replaceAll("(?i)\\bapply now\\b", " ");
+        candidate = candidate.replaceAll("(?i)\\bviewed\\b", " ");
+        candidate = candidate.replaceAll("(?i)\\bpromoted\\b", " ");
+        candidate = candidate.replaceAll("[|,]+", " ");
+        candidate = candidate.replaceAll("\\s+", " ").trim();
+        return candidate;
+    }
+
+    private boolean looksLikeLocation(String value) {
+        String lower = stringValue(value).toLowerCase(Locale.ROOT);
+        return lower.contains("india")
+                || lower.contains("remote")
+                || lower.contains("hybrid")
+                || lower.contains("onsite")
+                || lower.contains("bengaluru")
+                || lower.contains("bangalore")
+                || lower.contains("pune")
+                || lower.contains("hyderabad")
+                || lower.contains("mumbai")
+                || lower.contains("delhi")
+                || lower.contains("chennai")
+                || lower.contains("noida")
+                || lower.contains("gurgaon")
+                || lower.contains("gurugram");
+    }
+
+    private boolean isExpiredOrClosedListing(String title, String snippet, String link) {
+        String text = (stringValue(title) + " " + stringValue(snippet) + " " + stringValue(link)).toLowerCase(Locale.ROOT);
+        return text.contains("deadline ended")
+                || text.contains("application deadline ended")
+                || text.contains("apply deadline ended")
+                || text.contains("applications closed")
+                || text.contains("application closed")
+                || text.contains("no longer accepting applications")
+                || text.contains("position filled")
+                || text.contains("hiring ended")
+                || text.contains("job expired")
+                || text.contains("expired job")
+                || text.contains("vacancy closed")
+                || text.contains("role closed")
+                || text.contains("this job is no longer available");
     }
 
     private boolean looksLikePlatformName(String value) {
