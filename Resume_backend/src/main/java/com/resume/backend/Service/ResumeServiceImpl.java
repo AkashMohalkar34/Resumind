@@ -12,8 +12,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,8 +140,10 @@ public class ResumeServiceImpl implements ResumeService {
     // ================= UTIL =================
 
     private String loadPromptFromFile(String fileName) throws IOException {
-        Path path = new ClassPathResource(fileName).getFile().toPath();
-        return Files.readString(path);
+        ClassPathResource resource = new ClassPathResource(fileName);
+        try (InputStream inputStream = resource.getInputStream()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     private String replaceTemplate(String template, Map<String, String> values) {
