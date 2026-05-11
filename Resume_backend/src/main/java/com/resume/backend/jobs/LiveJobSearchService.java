@@ -88,14 +88,16 @@ public class LiveJobSearchService {
 
                     String snippet = stringValue(item.get("snippet"));
                     String platform = detectPlatform(link);
-                    String company = resolveCompany(item, title, platform);
+                    String company = resolveCompany(item, title, snippet, platform);
                     String location = resolveLocation(item, snippet, request.location());
+                    String vacancies = resolveVacancies(item, title, snippet);
                     List<String> matchedKeywords = findMatchedKeywords(title + " " + snippet, request.skills());
 
                     Map<String, Object> job = new LinkedHashMap<>();
                     job.put("title", title);
                     job.put("company", company);
                     job.put("location", location);
+                    job.put("vacancies", vacancies);
                     job.put("description", snippet);
                     job.put("matchedKeywords", matchedKeywords);
                     job.put("match_score", calculateScore(matchedKeywords, jobs.size()));
@@ -226,20 +228,25 @@ public class LiveJobSearchService {
         return "Job Platform";
     }
 
-    private String resolveCompany(Map<String, Object> item, String title, String platform) {
+    private String resolveCompany(Map<String, Object> item, String title, String snippet, String platform) {
+        String snippetCompany = extractCompanyFromSnippet(snippet);
+        if (!snippetCompany.isBlank()) {
+            return snippetCompany;
+        }
+
         String source = stringValue(item.get("source"));
-        if (!source.isBlank()) {
+        if (!source.isBlank() && !looksLikePlatformName(source)) {
             return source;
         }
 
         String metadata = stringValue(item.get("displayed_link"));
-        if (!metadata.isBlank() && !metadata.equalsIgnoreCase(platform)) {
+        if (!metadata.isBlank() && !metadata.equalsIgnoreCase(platform) && !looksLikePlatformName(metadata)) {
             return metadata;
         }
 
         if (title.contains(" - ")) {
             String[] parts = title.split("\\s-\\s", 2);
-            if (parts.length == 2 && !parts[1].isBlank()) {
+            if (parts.length == 2 && !parts[1].isBlank() && !looksLikePlatformName(parts[1])) {
                 return parts[1].trim();
             }
         }
@@ -265,8 +272,40 @@ public class LiveJobSearchService {
         return "Not specified";
     }
 
+    private String resolveVacancies(Map<String, Object> item, String title, String snippet) {
+        String richSnippetVacancies = extractRichSnippetValue(item, "vacancies");
+        if (!richSnippetVacancies.isBlank()) {
+            return richSnippetVacancies;
+        }
+
+        String text = stringValue(title) + ". " + stringValue(snippet);
+        String lower = text.toLowerCase(Locale.ROOT);
+
+        java.util.regex.Matcher countMatcher = java.util.regex.Pattern
+                .compile("\\b(\\d+)\\+?\\s+(openings?|vacancies?|positions?|roles?)\\b", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(text);
+        if (countMatcher.find()) {
+            return countMatcher.group(1) + " openings";
+        }
+
+        if (lower.contains("multiple openings") || lower.contains("multiple positions") || lower.contains("multiple vacancies")) {
+            return "Multiple openings";
+        }
+
+        if (lower.contains("urgent hiring") || lower.contains("hiring now")) {
+            return "Hiring now";
+        }
+
+        return "Not specified";
+    }
+
     @SuppressWarnings("unchecked")
     private String extractRichSnippetLocation(Map<String, Object> item) {
+        return extractRichSnippetValue(item, "location");
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractRichSnippetValue(Map<String, Object> item, String key) {
         Object richSnippet = item.get("rich_snippet");
         if (!(richSnippet instanceof Map<?, ?> richSnippetMap)) {
             return "";
@@ -282,7 +321,77 @@ public class LiveJobSearchService {
             return "";
         }
 
-        return stringValue(extensionsMap.get("location"));
+        return stringValue(extensionsMap.get(key));
+    }
+
+    private String extractCompanyFromSnippet(String snippet) {
+        String normalized = stringValue(snippet);
+        if (normalized.isBlank()) {
+            return "";
+        }
+
+        String firstSentence = normalized.split("\\.", 2)[0].trim();
+        if (looksLikeCompanyName(firstSentence)) {
+            return firstSentence;
+        }
+
+        String[] segments = normalized.split("\\.");
+        for (String segment : segments) {
+            String candidate = segment.trim();
+            if (looksLikeCompanyName(candidate)) {
+                return candidate;
+            }
+        }
+
+        return "";
+    }
+
+    private boolean looksLikeCompanyName(String value) {
+        String candidate = stringValue(value);
+        if (candidate.isBlank()) {
+            return false;
+        }
+
+        String lower = candidate.toLowerCase(Locale.ROOT);
+        if (looksLikePlatformName(candidate)) {
+            return false;
+        }
+        if (lower.contains("apply") || lower.contains("jobs in") || lower.contains("job opening")) {
+            return false;
+        }
+        if (lower.contains("developer") || lower.contains("engineer") || lower.contains("analyst")) {
+            return false;
+        }
+        if (lower.contains("remote")) {
+            candidate = candidate.replaceAll("(?i)\\bremote\\b", "").replaceAll("\\s+", " ").trim();
+            lower = candidate.toLowerCase(Locale.ROOT);
+        }
+        if (candidate.isBlank()) {
+            return false;
+        }
+
+        return candidate.equals(candidate.toUpperCase(Locale.ROOT))
+                || lower.contains("consulting")
+                || lower.contains("solutions")
+                || lower.contains("technologies")
+                || lower.contains("systems")
+                || lower.contains("labs")
+                || lower.contains("tech")
+                || lower.contains("software")
+                || lower.contains("analytics")
+                || lower.contains("digital")
+                || lower.contains("services")
+                || candidate.split("\\s+").length <= 5;
+    }
+
+    private boolean looksLikePlatformName(String value) {
+        String lower = stringValue(value).toLowerCase(Locale.ROOT);
+        return lower.contains("linkedin")
+                || lower.contains("indeed")
+                || lower.contains("naukri")
+                || lower.contains("foundit")
+                || lower.contains("unstop")
+                || lower.contains("acciojob");
     }
 
     private String normalize(String value) {

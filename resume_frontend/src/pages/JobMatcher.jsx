@@ -463,6 +463,7 @@ const JobMatcher = () => {
                     const applyUrl = getApplyUrl(job);
                     const company = job.company || "Not specified";
                     const location = job.location || "Not specified";
+                    const vacancies = job.vacancies || "Not specified";
 
                     return (
                       <>
@@ -475,38 +476,8 @@ const JobMatcher = () => {
                         {job.title}
                       </h3>
                     </div>
-                    {applyUrl ? (
-                      <a
-                        href={applyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-100 transition hover:bg-cyan-200/18"
-                      >
-                        Apply
-                      </a>
-                    ) : (
-                      <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-100">
-                        Apply
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-2 text-xs text-slate-300">Company: {company}</p>
-                  <p className="mt-1 text-xs text-slate-300">Location: {location}</p>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-200">{job.description}</p>
-
-                  {job.matchedKeywords?.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {job.matchedKeywords.slice(0, 4).map((keyword) => (
-                        <SkillChip key={keyword}>{keyword}</SkillChip>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {job.platform_links?.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {job.platform_links.map((platform) => (
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {job.platform_links?.map((platform) => (
                         <a
                           key={`${job.title}-${platform.name}`}
                           href={platform.url}
@@ -518,7 +489,36 @@ const JobMatcher = () => {
                         </a>
                       ))}
                     </div>
+                  </div>
+
+                  <p className="mt-2 text-xs text-slate-300">Company: {company}</p>
+                  <p className="mt-1 text-xs text-slate-300">Location: {location}</p>
+                  <p className="mt-1 text-xs text-slate-300">Vacancies: {vacancies}</p>
+
+                  {job.matchedKeywords?.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {job.matchedKeywords.slice(0, 4).map((keyword) => (
+                        <SkillChip key={keyword}>{keyword}</SkillChip>
+                      ))}
+                    </div>
                   ) : null}
+
+                  <div className="mt-4">
+                    {applyUrl ? (
+                      <a
+                        href={applyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-200/18"
+                      >
+                        Apply
+                      </a>
+                    ) : (
+                      <span className="inline-flex rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs font-semibold text-cyan-100">
+                        Apply
+                      </span>
+                    )}
+                  </div>
 
                       </>
                     );
