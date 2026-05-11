@@ -19,8 +19,8 @@ const templateCards = [
   { id: "t2", title: "Modern Grid", subtitle: "Clean Sidebar", image: "/images/fullstack_developer.png", component: Template2 },
   { id: "t3", title: "Editorial Edge", subtitle: "Bold Storytelling", image: "/images/Template3.png", component: Template3 },
   { id: "t4", title: "Balanced Pro", subtitle: "Polished Layout", image: "/images/Template4.png", component: Template4 },
-  { id: "t5", title: "Minimal Slate", subtitle: "Simple And Sharp", image: "dist/images/Template5.png", component: Template5 },
-  { id: "t6", title: "Classic Focus", subtitle: "Traditional Resume", image: "dist/images/Template6.png", component: Template6 },
+  { id: "t5", title: "Minimal Slate", subtitle: "Simple And Sharp", image: "/images/Template5.png", component: Template5 },
+  { id: "t6", title: "Classic Focus", subtitle: "Traditional Resume", image: "/images/Template6.png", component: Template6 },
   { id: "t7", title: "Structured Plus", subtitle: "Section Driven", image: "/images/Template7.png", component: Template7 },
   { id: "t8", title: "Creative Pulse", subtitle: "Modern Visual Style", image: "/images/Template8.png", component: Template8 },
 ];
