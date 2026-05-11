@@ -213,6 +213,9 @@ const SkillChip = ({ children }) => (
   </span>
 );
 
+const getApplyUrl = (job) =>
+  job?.apply_url || job?.platform_links?.[0]?.url || null;
+
 const JobMatcher = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -456,6 +459,13 @@ const JobMatcher = () => {
                   key={`${job.title}-${index}`}
                   className="group rounded-[1.15rem] border border-white/10 bg-[linear-gradient(180deg,rgba(34,44,69,0.98),rgba(21,30,49,0.98))] p-4 shadow-[0_16px_38px_rgba(0,0,0,0.2)] transition duration-300 hover:-translate-y-1 hover:border-cyan-200/25 hover:shadow-[0_20px_45px_rgba(0,0,0,0.28)]"
                 >
+                  {(() => {
+                    const applyUrl = getApplyUrl(job);
+                    const company = job.company || "Not specified";
+                    const location = job.location || "Not specified";
+
+                    return (
+                      <>
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-[11px] uppercase tracking-[0.2em] text-sky-200/80">
@@ -465,13 +475,24 @@ const JobMatcher = () => {
                         {job.title}
                       </h3>
                     </div>
-                    <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-100">
-                      Apply
-                    </span>
+                    {applyUrl ? (
+                      <a
+                        href={applyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-100 transition hover:bg-cyan-200/18"
+                      >
+                        Apply
+                      </a>
+                    ) : (
+                      <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-100">
+                        Apply
+                      </span>
+                    )}
                   </div>
 
-                  <p className="mt-2 text-xs text-slate-300">Company: {job.company}</p>
-                  <p className="mt-1 text-xs text-slate-300">Location: {job.location}</p>
+                  <p className="mt-2 text-xs text-slate-300">Company: {company}</p>
+                  <p className="mt-1 text-xs text-slate-300">Location: {location}</p>
 
                   <p className="mt-3 text-sm leading-6 text-slate-200">{job.description}</p>
 
@@ -498,6 +519,10 @@ const JobMatcher = () => {
                       ))}
                     </div>
                   ) : null}
+
+                      </>
+                    );
+                  })()}
                 </article>
               ))
             ) : (

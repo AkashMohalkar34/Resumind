@@ -88,15 +88,18 @@ public class LiveJobSearchService {
 
                     String snippet = stringValue(item.get("snippet"));
                     String platform = detectPlatform(link);
+                    String company = resolveCompany(item, title, platform);
+                    String location = resolveLocation(item, snippet, request.location());
                     List<String> matchedKeywords = findMatchedKeywords(title + " " + snippet, request.skills());
 
                     Map<String, Object> job = new LinkedHashMap<>();
                     job.put("title", title);
-                    job.put("company", platform);
-                    job.put("location", stringValue(request.location()));
+                    job.put("company", company);
+                    job.put("location", location);
                     job.put("description", snippet);
                     job.put("matchedKeywords", matchedKeywords);
                     job.put("match_score", calculateScore(matchedKeywords, jobs.size()));
+                    job.put("apply_url", link);
                     job.put("platform_links", List.of(Map.of(
                             "name", platform,
                             "url", link
@@ -221,6 +224,65 @@ public class LiveJobSearchService {
             return "AccioJob";
         }
         return "Job Platform";
+    }
+
+    private String resolveCompany(Map<String, Object> item, String title, String platform) {
+        String source = stringValue(item.get("source"));
+        if (!source.isBlank()) {
+            return source;
+        }
+
+        String metadata = stringValue(item.get("displayed_link"));
+        if (!metadata.isBlank() && !metadata.equalsIgnoreCase(platform)) {
+            return metadata;
+        }
+
+        if (title.contains(" - ")) {
+            String[] parts = title.split("\\s-\\s", 2);
+            if (parts.length == 2 && !parts[1].isBlank()) {
+                return parts[1].trim();
+            }
+        }
+
+        return platform;
+    }
+
+    private String resolveLocation(Map<String, Object> item, String snippet, String requestLocation) {
+        String richSnippetLocation = extractRichSnippetLocation(item);
+        if (!richSnippetLocation.isBlank()) {
+            return richSnippetLocation;
+        }
+
+        if (!stringValue(requestLocation).isBlank()) {
+            return stringValue(requestLocation);
+        }
+
+        String normalizedSnippet = stringValue(snippet);
+        if (normalizedSnippet.toLowerCase(Locale.ROOT).contains("remote")) {
+            return "Remote";
+        }
+
+        return "Not specified";
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractRichSnippetLocation(Map<String, Object> item) {
+        Object richSnippet = item.get("rich_snippet");
+        if (!(richSnippet instanceof Map<?, ?> richSnippetMap)) {
+            return "";
+        }
+
+        Object top = richSnippetMap.get("top");
+        if (!(top instanceof Map<?, ?> topMap)) {
+            return "";
+        }
+
+        Object detectedExtensions = topMap.get("detected_extensions");
+        if (!(detectedExtensions instanceof Map<?, ?> extensionsMap)) {
+            return "";
+        }
+
+        return stringValue(extensionsMap.get("location"));
     }
 
     private String normalize(String value) {
