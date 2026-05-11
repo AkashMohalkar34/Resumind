@@ -22,6 +22,29 @@ public class LiveJobSearchService {
 
     private static final int LIVE_RESULT_LIMIT = 50;
     private static final int RESULTS_PER_PAGE = 10;
+    private static final String DEFAULT_COUNTRY = "India";
+    private static final List<String> INDIA_LOCATION_TERMS = List.of(
+            "india",
+            "remote",
+            "bengaluru",
+            "bangalore",
+            "pune",
+            "hyderabad",
+            "mumbai",
+            "delhi",
+            "new delhi",
+            "noida",
+            "gurgaon",
+            "gurugram",
+            "chennai",
+            "kolkata",
+            "ahmedabad",
+            "coimbatore",
+            "kochi",
+            "jaipur",
+            "lucknow",
+            "indore"
+    );
 
     private static final List<String> SUPPORTED_DOMAINS = List.of(
             "linkedin.com/jobs",
@@ -58,7 +81,7 @@ public class LiveJobSearchService {
             Set<String> seenLinks = new LinkedHashSet<>();
 
             for (int start = 0; start < LIVE_RESULT_LIMIT; start += RESULTS_PER_PAGE) {
-                String response = fetchResultsPage(query, request.location(), start);
+                String response = fetchResultsPage(query, indiaSearchLocation(request.location()), start);
                 if (response == null || response.isBlank()) {
                     break;
                 }
@@ -93,6 +116,9 @@ public class LiveJobSearchService {
                     String platform = detectPlatform(link);
                     String company = resolveCompany(item, title, snippet, platform);
                     String location = resolveLocation(item, snippet, request.location());
+                    if (!isIndiaJob(title, snippet, location, link)) {
+                        continue;
+                    }
                     List<String> matchedKeywords = findMatchedKeywords(title + " " + snippet, request.skills());
 
                     Map<String, Object> job = new LinkedHashMap<>();
@@ -167,6 +193,7 @@ public class LiveJobSearchService {
         if (!location.isBlank()) {
             queryParts.add("\"" + location + "\"");
         }
+        queryParts.add("\"" + DEFAULT_COUNTRY + "\"");
 
         String domainQuery = SUPPORTED_DOMAINS.stream()
                 .map(domain -> "site:" + domain)
@@ -231,22 +258,22 @@ public class LiveJobSearchService {
 
     private String resolveCompany(Map<String, Object> item, String title, String snippet, String platform) {
         String snippetCompany = extractCompanyFromSnippet(snippet);
-        if (!snippetCompany.isBlank()) {
+        if (!snippetCompany.isBlank() && !looksGenericCompanyFallback(snippetCompany)) {
             return snippetCompany;
         }
 
         String titleCompany = extractCompanyFromTitle(title);
-        if (!titleCompany.isBlank()) {
+        if (!titleCompany.isBlank() && !looksGenericCompanyFallback(titleCompany)) {
             return titleCompany;
         }
 
         String source = stringValue(item.get("source"));
-        if (!source.isBlank() && !looksLikePlatformName(source)) {
+        if (!source.isBlank() && !looksLikePlatformName(source) && !looksGenericCompanyFallback(source)) {
             return source;
         }
 
         String metadata = stringValue(item.get("displayed_link"));
-        if (!metadata.isBlank() && !metadata.equalsIgnoreCase(platform) && !looksLikePlatformName(metadata)) {
+        if (!metadata.isBlank() && !metadata.equalsIgnoreCase(platform) && !looksLikePlatformName(metadata) && !looksGenericCompanyFallback(metadata)) {
             return metadata;
         }
 
@@ -257,25 +284,35 @@ public class LiveJobSearchService {
             }
         }
 
-        return platform;
+        return "Hiring Company";
     }
 
     private String resolveLocation(Map<String, Object> item, String snippet, String requestLocation) {
         String richSnippetLocation = extractRichSnippetLocation(item);
         if (!richSnippetLocation.isBlank()) {
-            return richSnippetLocation;
+            return normalizeIndiaLocation(richSnippetLocation);
+        }
+
+        String titleLocation = extractLocationFromText(stringValue(item.get("title")));
+        if (!titleLocation.isBlank()) {
+            return titleLocation;
+        }
+
+        String snippetLocation = extractLocationFromText(snippet);
+        if (!snippetLocation.isBlank()) {
+            return snippetLocation;
         }
 
         if (!stringValue(requestLocation).isBlank()) {
-            return stringValue(requestLocation);
+            return normalizeIndiaLocation(requestLocation);
         }
 
         String normalizedSnippet = stringValue(snippet);
         if (normalizedSnippet.toLowerCase(Locale.ROOT).contains("remote")) {
-            return "Remote";
+            return "India (Remote)";
         }
 
-        return "Not specified";
+        return DEFAULT_COUNTRY;
     }
 
     @SuppressWarnings("unchecked")
@@ -378,6 +415,18 @@ public class LiveJobSearchService {
                 || candidate.split("\\s+").length <= 5;
     }
 
+    private boolean looksGenericCompanyFallback(String value) {
+        String lower = cleanCompanyCandidate(value).toLowerCase(Locale.ROOT);
+        return lower.isBlank()
+                || lower.equals("job platform")
+                || lower.equals("hiring company")
+                || lower.equals("easy apply")
+                || lower.equals("viewed")
+                || lower.equals("promoted")
+                || lower.equals("urgent hiring")
+                || lower.equals("multiple openings");
+    }
+
     private String cleanCompanyCandidate(String value) {
         String candidate = stringValue(value);
         candidate = candidate.replaceAll("(?i)\\bremote\\b", " ");
@@ -390,22 +439,16 @@ public class LiveJobSearchService {
         return candidate;
     }
 
+    private String indiaSearchLocation(String requestedLocation) {
+        String location = stringValue(requestedLocation);
+        return location.isBlank() ? DEFAULT_COUNTRY : location + ", " + DEFAULT_COUNTRY;
+    }
+
     private boolean looksLikeLocation(String value) {
         String lower = stringValue(value).toLowerCase(Locale.ROOT);
-        return lower.contains("india")
-                || lower.contains("remote")
+        return INDIA_LOCATION_TERMS.stream().anyMatch(lower::contains)
                 || lower.contains("hybrid")
-                || lower.contains("onsite")
-                || lower.contains("bengaluru")
-                || lower.contains("bangalore")
-                || lower.contains("pune")
-                || lower.contains("hyderabad")
-                || lower.contains("mumbai")
-                || lower.contains("delhi")
-                || lower.contains("chennai")
-                || lower.contains("noida")
-                || lower.contains("gurgaon")
-                || lower.contains("gurugram");
+                || lower.contains("onsite");
     }
 
     private boolean isExpiredOrClosedListing(String title, String snippet, String link) {
@@ -423,6 +466,77 @@ public class LiveJobSearchService {
                 || text.contains("vacancy closed")
                 || text.contains("role closed")
                 || text.contains("this job is no longer available");
+    }
+
+    private boolean isIndiaJob(String title, String snippet, String location, String link) {
+        String combined = (stringValue(title) + " " + stringValue(snippet) + " " + stringValue(location) + " " + stringValue(link))
+                .toLowerCase(Locale.ROOT);
+        return INDIA_LOCATION_TERMS.stream().anyMatch(combined::contains);
+    }
+
+    private String extractLocationFromText(String text) {
+        String normalized = stringValue(text).toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return "";
+        }
+
+        if (normalized.contains("remote")) {
+            return "India (Remote)";
+        }
+        if (normalized.contains("bengaluru") || normalized.contains("bangalore")) {
+            return "Bengaluru, India";
+        }
+        if (normalized.contains("pune")) {
+            return "Pune, India";
+        }
+        if (normalized.contains("hyderabad")) {
+            return "Hyderabad, India";
+        }
+        if (normalized.contains("mumbai")) {
+            return "Mumbai, India";
+        }
+        if (normalized.contains("new delhi") || normalized.contains("delhi")) {
+            return "Delhi, India";
+        }
+        if (normalized.contains("noida")) {
+            return "Noida, India";
+        }
+        if (normalized.contains("gurugram") || normalized.contains("gurgaon")) {
+            return "Gurugram, India";
+        }
+        if (normalized.contains("chennai")) {
+            return "Chennai, India";
+        }
+        if (normalized.contains("kolkata")) {
+            return "Kolkata, India";
+        }
+        if (normalized.contains("ahmedabad")) {
+            return "Ahmedabad, India";
+        }
+        if (normalized.contains("coimbatore")) {
+            return "Coimbatore, India";
+        }
+        if (normalized.contains("kochi")) {
+            return "Kochi, India";
+        }
+        if (normalized.contains("jaipur")) {
+            return "Jaipur, India";
+        }
+        if (normalized.contains("lucknow")) {
+            return "Lucknow, India";
+        }
+        if (normalized.contains("indore")) {
+            return "Indore, India";
+        }
+        if (normalized.contains("india")) {
+            return DEFAULT_COUNTRY;
+        }
+        return "";
+    }
+
+    private String normalizeIndiaLocation(String location) {
+        String normalized = extractLocationFromText(location);
+        return normalized.isBlank() ? stringValue(location) : normalized;
     }
 
     private boolean looksLikePlatformName(String value) {

@@ -216,6 +216,22 @@ const SkillChip = ({ children }) => (
 const getApplyUrl = (job) =>
   job?.apply_url || job?.platform_links?.[0]?.url || null;
 
+const getCompanyLabel = (job) => {
+  const company = String(job?.company || "").trim();
+  if (!company || company === "Hiring Company" || company === "Job Platform") {
+    return "Company name coming soon";
+  }
+  return company;
+};
+
+const getLocationLabel = (job) => {
+  const location = String(job?.location || "").trim();
+  if (!location || location === "Not specified") {
+    return "India";
+  }
+  return location;
+};
+
 const JobMatcher = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -461,8 +477,8 @@ const JobMatcher = () => {
                 >
                   {(() => {
                     const applyUrl = getApplyUrl(job);
-                    const company = job.company || "Not specified";
-                    const location = job.location || "Not specified";
+                    const company = getCompanyLabel(job);
+                    const location = getLocationLabel(job);
 
                     return (
                       <>
